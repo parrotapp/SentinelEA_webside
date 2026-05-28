@@ -292,7 +292,7 @@ const LoginPage=({onLogin})=>{
 };
 
 const MobileNav=({route,setRoute})=>(
-  <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg1/95 backdrop-blur border-t border-line flex items-stretch" style={{paddingBottom:'env(safe-area-inset-bottom)'}}>
+  <nav className="md:hidden shrink-0 bg-bg1 border-t border-line flex items-stretch" style={{paddingBottom:'env(safe-area-inset-bottom)'}}>
     {[{id:'dashboard',label:'Dashboard',icon:'dashboard'},{id:'trades',label:'Trades',icon:'list'},{id:'analytics',label:'Stats',icon:'chart'},{id:'settings',label:'Settings',icon:'cog'}].map(item=>{const active=route===item.id;return(
       <button key={item.id} onClick={()=>setRoute(item.id)} className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors ${active?'text-gold':'text-fg3'}`}>
         <Icon name={item.icon} size={18}/>{item.label}
@@ -302,7 +302,7 @@ const MobileNav=({route,setRoute})=>(
 );
 
 const Sidebar=({route,setRoute,eaStatus,onToggleEa,onLogout})=>(
-  <aside className="hidden md:flex w-[232px] shrink-0 bg-bg1 border-r border-line h-screen sticky top-0 flex-col">
+  <aside className="hidden md:flex w-[232px] shrink-0 bg-bg1 border-r border-line h-full flex-col overflow-y-auto">
     <div className="px-5 pt-5 pb-6"><Logo/></div>
     <nav className="px-3 flex flex-col gap-1">
       {[{id:'dashboard',label:'Dashboard',icon:'dashboard'},{id:'trades',label:'Trade History',icon:'list'},{id:'analytics',label:'Analytics',icon:'chart'},{id:'settings',label:'Settings',icon:'cog'}].map(item=>{const active=route===item.id;return(
@@ -524,7 +524,7 @@ const SecuritySettings=()=><>
 
 const SettingsPage=({eaStatus,setEaStatus})=>{
   const [section,setSection]=useState('api');
-  return<div className="px-4 md:px-8 py-5 md:py-6 pb-24 md:pb-6"><div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6"><div className="flex lg:flex-col gap-1">{[{id:'api',label:'API Keys',icon:'key'},{id:'ea',label:'EA Configuration',icon:'cog'},{id:'notify',label:'Notifications',icon:'bell'},{id:'security',label:'Security',icon:'shield'}].map(s=><button key={s.id} onClick={()=>setSection(s.id)} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm transition-colors ${section===s.id?'bg-bg2 text-fg0 border border-line':'text-fg2 hover:text-fg0 border border-transparent'}`}><Icon name={s.icon} size={14}/>{s.label}</button>)}</div><div className="space-y-5">{section==='api'&&<ApiSettings/>}{section==='ea'&&<EaSettings eaStatus={eaStatus} setEaStatus={setEaStatus}/>}{section==='notify'&&<NotifySettings/>}{section==='security'&&<SecuritySettings/>}</div></div></div>;
+  return<div className="px-4 md:px-8 py-5 md:py-6"><div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6"><div className="flex lg:flex-col gap-1">{[{id:'api',label:'API Keys',icon:'key'},{id:'ea',label:'EA Configuration',icon:'cog'},{id:'notify',label:'Notifications',icon:'bell'},{id:'security',label:'Security',icon:'shield'}].map(s=><button key={s.id} onClick={()=>setSection(s.id)} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm transition-colors ${section===s.id?'bg-bg2 text-fg0 border border-line':'text-fg2 hover:text-fg0 border border-transparent'}`}><Icon name={s.icon} size={14}/>{s.label}</button>)}</div><div className="space-y-5">{section==='api'&&<ApiSettings/>}{section==='ea'&&<EaSettings eaStatus={eaStatus} setEaStatus={setEaStatus}/>}{section==='notify'&&<NotifySettings/>}{section==='security'&&<SecuritySettings/>}</div></div></div>;
 };
 
 const TITLES={dashboard:{title:'Dashboard',subtitle:'Real-time overview of your Expert Advisor'},trades:{title:'Trade History',subtitle:'Every position the EA has opened and closed'},analytics:{title:'Analytics',subtitle:'Performance breakdown across time, pairs, and risk'},settings:{title:'Settings',subtitle:'API keys, EA configuration, and account preferences'}};
@@ -535,9 +535,9 @@ const App=()=>{
   if(!authed)return<LoginPage onLogin={onLogin}/>;
   const {title,subtitle}=TITLES[route];
   return(
-    <div className="flex min-h-screen bg-bg0">
+    <div className="flex flex-col md:flex-row h-screen bg-bg0">
       <Sidebar route={route} setRoute={setRoute} eaStatus={eaStatus} onToggleEa={()=>setEaStatus(s=>s==='active'?'paused':'active')} onLogout={()=>setAuthed(false)}/>
-      <main className="flex-1 min-w-0 pb-20 md:pb-0">
+      <main className="flex-1 min-w-0 overflow-y-auto">
         <Topbar title={title} subtitle={subtitle} user={user}/>
         <div>{route==='dashboard'&&<DashboardPage eaStatus={eaStatus}/>}{route==='trades'&&<TradesPage/>}{route==='analytics'&&<AnalyticsPage/>}{route==='settings'&&<SettingsPage eaStatus={eaStatus} setEaStatus={setEaStatus}/>}</div>
       </main>
