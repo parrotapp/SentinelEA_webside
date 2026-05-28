@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'"/>
+<meta name="referrer" content="no-referrer"/>
+<title>SentinelEA — Algorithmic Trading Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg-0:#0a0e14;--bg-1:#0f141c;--bg-2:#161c26;--bg-3:#1d2430;--line:#262e3c;--line-2:#323a4a;--fg-0:#f5f6f8;--fg-1:#c7ccd6;--fg-2:#8a90a0;--fg-3:#5a6070;--gold:#c9f25c;--gold-2:#dcf78d;--up:#18c19a;--down:#f4516c}
+html,body,#root{background:var(--bg-0);color:var(--fg-0)}
+body{font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.font-display{font-family:'Sora','Inter',sans-serif;letter-spacing:-0.01em}
+.font-mono,.num{font-family:'JetBrains Mono',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#262e3c;border-radius:8px;border:2px solid var(--bg-0)}
+::-webkit-scrollbar-thumb:hover{background:#323a4a}
+.bg-bg0{background:var(--bg-0)}.bg-bg1{background:var(--bg-1)}.bg-bg2{background:var(--bg-2)}.bg-bg3{background:var(--bg-3)}
+.border-line{border-color:var(--line)}.border-line2{border-color:var(--line-2)}
+.text-fg0{color:var(--fg-0)}.text-fg1{color:var(--fg-1)}.text-fg2{color:var(--fg-2)}.text-fg3{color:var(--fg-3)}
+.text-bg0{color:var(--bg-0)}.hover\:text-bg0:hover{color:var(--bg-0)}
+.text-gold{color:var(--gold)}.text-gold-2{color:var(--gold-2)}.hover\:text-gold-2:hover{color:var(--gold-2)}
+.bg-gold{background:var(--gold)}.bg-gold-2{background:var(--gold-2)}.hover\:bg-gold-2:hover{background:var(--gold-2)}
+.text-up{color:var(--up)}.text-down{color:var(--down)}
+.glow-gold{box-shadow:0 0 0 1px rgba(201,242,92,.18),0 8px 30px -10px rgba(201,242,92,.25)}
+.grid-bg{background-image:linear-gradient(to right,rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.025) 1px,transparent 1px);background-size:32px 32px}
+.pulse-dot::before{content:'';position:absolute;inset:-3px;border-radius:9999px;background:currentColor;opacity:.4;animation:pulse 1.8s infinite}
+@keyframes pulse{0%{transform:scale(.8);opacity:.5}100%{transform:scale(2);opacity:0}}
+.ticker-up{animation:flashUp .6s ease-out}.ticker-down{animation:flashDown .6s ease-out}
+@keyframes flashUp{0%{background:rgba(24,193,154,.18)}100%{background:transparent}}
+@keyframes flashDown{0%{background:rgba(244,81,108,.18)}100%{background:transparent}}
+.recharts-cartesian-axis-tick-value{fill:var(--fg-3);font-family:'JetBrains Mono',monospace;font-size:11px}
+.recharts-cartesian-grid line{stroke:var(--line);stroke-dasharray:2 4}
+.recharts-tooltip-wrapper{outline:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+function mulberry32(seed){return function(){let t=(seed+=0x6D2B79F5);t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+const PAIRS=[{symbol:'BTCUSDT',price:67421.50,base:'BTC'},{symbol:'ETHUSDT',price:3542.80,base:'ETH'},{symbol:'SOLUSDT',price:178.45,base:'SOL'},{symbol:'BNBUSDT',price:612.30,base:'BNB'},{symbol:'XRPUSDT',price:0.5621,base:'XRP'},{symbol:'AVAXUSDT',price:34.82,base:'AVAX'},{symbol:'ARBUSDT',price:0.8945,base:'ARB'},{symbol:'LINKUSDT',price:14.72,base:'LINK'},{symbol:'DOGEUSDT',price:0.1623,base:'DOGE'},{symbol:'INJUSDT',price:24.18,base:'INJ'}];
+function genTrades(){const rng=mulberry32(42),trades=[],now=Date.now();let id=10240;for(let i=0;i<286;i++){const pair=PAIRS[Math.floor(rng()*PAIRS.length)],side=rng()>.46?'LONG':'SHORT',openedAt=now-Math.floor(rng()*120*86400000),durationMin=5+Math.floor(rng()*600),isOpen=i<6,entryPrice=pair.price*(1+(rng()-.5)*.08),sizeUsd=200+Math.floor(rng()*4800),qty=sizeUsd/entryPrice,leverage=[3,5,5,10,10,20][Math.floor(rng()*6)],isWin=rng()<.64,pctMove=(isWin?1:-1)*(.004+rng()*.032),dir=side==='LONG'?1:-1,exitPrice=entryPrice*(1+pctMove*dir),fee=sizeUsd*.0008,notional=sizeUsd*(leverage/5),pnl=isOpen?(notional*pctMove*.6):(notional*pctMove);trades.push({id:'T-'+(id+i),pair:pair.symbol,base:pair.base,side,entryPrice,exitPrice:isOpen?null:exitPrice,qty,sizeUsd,leverage,pnl:pnl-(isOpen?0:fee),pnlPct:pctMove*100,fee,openedAt,closedAt:isOpen?null:openedAt+durationMin*60000,status:isOpen?'OPEN':'CLOSED',strategy:['Grid v3','Trend Rider','Mean Rev','Breakout'][Math.floor(rng()*4)]})}trades.sort((a,b)=>b.openedAt-a.openedAt);return trades}
+const TRADES=genTrades();
+function genEquityCurve(start=10000){const closed=TRADES.filter(t=>t.status==='CLOSED').slice().sort((a,b)=>a.closedAt-b.closedAt);let eq=start,peak=start;const s=[{t:closed[0]?.closedAt-86400000||Date.now()-120*86400000,equity:start,drawdown:0}];for(const tr of closed){eq+=tr.pnl;if(eq>peak)peak=eq;s.push({t:tr.closedAt,equity:+eq.toFixed(2),drawdown:+((eq-peak)/peak*100).toFixed(2)})}return s}
+const EQUITY=genEquityCurve();
+function genMonthly(){const rng=mulberry32(7);return['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'].map((m,i)=>({month:m,return:+((i===2||i===5)?-(1+rng()*3):(2+rng()*12)).toFixed(2),trades:28+Math.floor(rng()*40)}))}
+const MONTHLY=genMonthly();
+function genPairPerf(){const map={};for(const t of TRADES){if(t.status!=='CLOSED')continue;if(!map[t.pair])map[t.pair]={pair:t.pair,base:t.base,pnl:0,trades:0,wins:0};map[t.pair].pnl+=t.pnl;map[t.pair].trades++;if(t.pnl>0)map[t.pair].wins++}return Object.values(map).map(p=>({...p,pnl:+p.pnl.toFixed(2),winRate:+((p.wins/p.trades)*100).toFixed(1)})).sort((a,b)=>b.pnl-a.pnl)}
+const PAIR_PERF=genPairPerf();
+function genHourlyDist(){const rng=mulberry32(13),data=[];for(let d=0;d<7;d++)for(let h=0;h<24;h++)data.push({d,h,v:Math.max(0,Math.floor(Math.sin((h-6)*.4)*8+10+rng()*6))});return data}
+const HOURLY=genHourlyDist();
+function summary(){const closed=TRADES.filter(t=>t.status==='CLOSED'),wins=closed.filter(t=>t.pnl>0),losses=closed.filter(t=>t.pnl<=0),totalPnl=closed.reduce((s,t)=>s+t.pnl,0),grossWin=wins.reduce((s,t)=>s+t.pnl,0),grossLoss=Math.abs(losses.reduce((s,t)=>s+t.pnl,0)),startBalance=10000,openTrades=TRADES.filter(t=>t.status==='OPEN');return{balance:startBalance+totalPnl,totalPnl,winRate:(wins.length/closed.length)*100,profitFactor:grossLoss===0?99:grossWin/grossLoss,avgWin:grossWin/Math.max(1,wins.length),avgLoss:grossLoss/Math.max(1,losses.length),maxDD:Math.min(...EQUITY.map(e=>e.drawdown)),sharpe:1.94,totalTrades:closed.length,openTrades:openTrades.length,openPnl:openTrades.reduce((s,t)=>s+t.pnl,0),wins:wins.length,losses:losses.length,startBalance}}
+window.MOCK={TRADES,EQUITY,MONTHLY,PAIR_PERF,HOURLY,SUMMARY:summary(),PAIRS};
+})();
+</script>
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+// Minimal SVG chart components (Recharts replacement)
+const SvgArea = ({data, dk='equity', color='#c9f25c', fy=v=>v, refY=null, h=280}) => {
+  if (!data?.length) return null;
+  const W=800,H=h,L=64,R=14,T=10,B=24,iw=W-L-R,ih=H-T-B;
+  const vs=data.map(d=>d[dk]);
+  let mn=Math.min(...vs),mx=Math.max(...vs);
+  if(refY!=null){mn=Math.min(mn,refY);mx=Math.max(mx,refY);}
+  const pad=(mx-mn)*0.05||1; mn-=pad; mx+=pad;
+  const rg=mx-mn||1;
+  const xp=i=>L+iw*i/Math.max(1,data.length-1), yp=v=>T+ih-(v-mn)/rg*ih;
+  const ln=data.map((d,i)=>(i?'L':'M')+xp(i).toFixed(1)+','+yp(d[dk]).toFixed(1)).join(' ');
+  const ar=ln+`L${xp(data.length-1).toFixed(1)},${T+ih}L${L},${T+ih}Z`;
+  const yt=[0,.25,.5,.75,1].map(t=>mn+rg*t);
+  const xs=Math.max(1,Math.floor(data.length/6));
+  const gid='g'+Math.random().toString(36).slice(2,8);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none">
+      <defs><linearGradient id={gid} x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.4"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
+      {yt.map((t,i)=><g key={i}><line x1={L} y1={yp(t)} x2={W-R} y2={yp(t)} stroke="#262e3c" strokeDasharray="2 4"/><text x={L-6} y={yp(t)+4} fill="#5a6070" fontSize="11" textAnchor="end" fontFamily="JetBrains Mono">{fy(t)}</text></g>)}
+      {refY!=null && <g><line x1={L} y1={yp(refY)} x2={W-R} y2={yp(refY)} stroke="#5a6070" strokeDasharray="2 4"/><text x={W-R-2} y={yp(refY)-4} fill="#5a6070" fontSize="10" textAnchor="end" fontFamily="JetBrains Mono">Initial</text></g>}
+      <path d={ar} fill={`url(#${gid})`}/>
+      <path d={ln} fill="none" stroke={color} strokeWidth="2"/>
+      {data.filter((_,i)=>i%xs===0).map((d,i)=>{const k=i*xs;return <text key={k} x={xp(k)} y={H-6} fill="#5a6070" fontSize="11" textAnchor="middle" fontFamily="JetBrains Mono">{d.label||''}</text>})}
+    </svg>
+  );
+};
+
+const SvgBars = ({data, dk='return', fy=v=>v, h=240, lk='month'}) => {
+  const W=800,H=h,L=56,R=14,T=14,B=30,iw=W-L-R,ih=H-T-B;
+  const vs=data.map(d=>d[dk]);
+  const mn=Math.min(0,...vs),mx=Math.max(0,...vs),rg=mx-mn||1;
+  const yp=v=>T+ih-(v-mn)/rg*ih;
+  const bw=iw/data.length*0.65,bp=iw/data.length*0.175;
+  const yt=[0,.25,.5,.75,1].map(t=>mn+rg*t);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none">
+      {yt.map((t,i)=><g key={i}><line x1={L} y1={yp(t)} x2={W-R} y2={yp(t)} stroke="#262e3c" strokeDasharray="2 4"/><text x={L-6} y={yp(t)+4} fill="#5a6070" fontSize="11" textAnchor="end" fontFamily="JetBrains Mono">{fy(t)}</text></g>)}
+      <line x1={L} y1={yp(0)} x2={W-R} y2={yp(0)} stroke="#5a6070"/>
+      {data.map((d,i)=>{const v=d[dk],x0=L+iw*i/data.length+bp,h0=Math.abs(v)/rg*ih,y0=v>=0?yp(v):yp(0);return <rect key={i} x={x0} y={y0} width={bw} height={h0} rx="3" fill={v>=0?'#18c19a':'#f4516c'}/>})}
+      {data.map((d,i)=><text key={i} x={L+iw*(i+0.5)/data.length} y={H-8} fill="#5a6070" fontSize="11" textAnchor="middle" fontFamily="JetBrains Mono">{d[lk]||''}</text>)}
+    </svg>
+  );
+};
+
+const Icon = ({ name, size=16, className='', strokeWidth=1.6 }) => {
+  const paths = {
+    dashboard:<><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></>,
+    list:<><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></>,
+    chart:<><path d="M3 21V5"/><path d="M3 17l5-5 4 3 8-8"/><path d="M16 7h4v4"/></>,
+    cog:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
+    bell:<><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>,
+    search:<><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>,
+    play:<path d="M6 4l14 8L6 20V4z"/>,
+    pause:<><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></>,
+    up:<path d="M7 14l5-5 5 5"/>,
+    down:<path d="M7 10l5 5 5-5"/>,
+    arrowRight:<path d="M5 12h14M13 6l6 6-6 6"/>,
+    plus:<path d="M12 5v14M5 12h14"/>,
+    download:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></>,
+    key:<><circle cx="7.5" cy="15.5" r="3.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></>,
+    logout:<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></>,
+    circle:<circle cx="12" cy="12" r="4"/>,
+    eye:<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></>,
+    eyeOff:<><path d="M17.9 17.9A10.7 10.7 0 0 1 12 19c-6 0-10-7-10-7a18.4 18.4 0 0 1 5.1-5.9M9.9 4.2A10.5 10.5 0 0 1 12 4c6 0 10 7 10 7a18.4 18.4 0 0 1-2.2 3"/><path d="m1 1 22 22"/><path d="M9.5 9.5a3 3 0 0 0 4.2 4.2"/></>,
+    check:<path d="m5 12 5 5L20 7"/>,
+    info:<><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></>,
+    flash:<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>,
+    shield:<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+    copy:<><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+    wallet:<><path d="M20 12V8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2 2 2 0 0 1 2-2h14v4"/><path d="M3 6v12a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2v-4h-5a2 2 0 0 1 0-4h5"/></>,
+    target:<><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></>,
+    activity:<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>{paths[name]||null}</svg>;
+};
+
+const Logo=({size=22})=>(
+  <div className="flex items-center gap-2.5">
+    <div className="flex items-center justify-center rounded-[7px] shrink-0" style={{width:size*1.5,height:size*1.5,background:'linear-gradient(155deg,#dcf78d 0%,#a3cc3d 100%)'}}>
+      <span className="font-display font-bold" style={{color:'#0a0e14',fontSize:size*.95,lineHeight:1}}>S</span>
+    </div>
+    <div className="font-display font-semibold tracking-tight text-fg0" style={{fontSize:size*.82}}>Sentinel<span className="text-gold">EA</span></div>
+  </div>
+);
+
+const fmtUsd=(v,{decimals=2,sign=false}={})=>{if(v==null||isNaN(v))return'—';const s=(sign&&v>0?'+':'')+(v<0?'-':'');return s+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:decimals,maximumFractionDigits:decimals})};
+const fmtPct=(v,d=2,sign=true)=>{if(v==null)return'—';return(sign&&v>0?'+':'')+v.toFixed(d)+'%'};
+const fmtPrice=v=>{if(v==null)return'—';const d=v<1?4:2;return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})};
+const relTime=ts=>{if(!ts)return'—';const d=(Date.now()-ts)/1000;if(d<60)return Math.floor(d)+'s ago';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago'};
+const fmtDate=ts=>{if(!ts)return'—';const d=new Date(ts);return d.toLocaleDateString('en-US',{month:'short',day:'2-digit'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})};
+
+const PairToken=({base,size=22})=>{
+  const colors={BTC:'#f7931a',ETH:'#627eea',SOL:'#9945ff',BNB:'#f0b90b',XRP:'#23292f',AVAX:'#e84142',ARB:'#28a0f0',LINK:'#2a5ada',DOGE:'#c2a633',INJ:'#00d2ff'};
+  return <div className="flex items-center justify-center rounded-full font-display font-semibold text-white shrink-0" style={{width:size,height:size,background:colors[base]||'#3a4150',fontSize:size*.42}}>{base.slice(0,3)}</div>;
+};
+
+const Pill=({children,tone='default',className=''})=>{
+  const t={default:'bg-bg3 text-fg1 border-line2',up:'bg-up/10 text-up border-up/30',down:'bg-down/10 text-down border-down/30',gold:'bg-gold/10 text-gold border-gold/30',muted:'bg-bg2 text-fg3 border-line'};
+  return <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider border rounded px-1.5 py-0.5 ${t[tone]||t.default} ${className}`}>{children}</span>;
+};
+
+const Btn=({children,onClick,variant='default',size='md',icon,type='button',className='',disabled})=>{
+  const v={primary:'bg-gold text-bg0 hover:bg-gold-2 border border-gold font-semibold',default:'bg-bg2 border border-line text-fg1 hover:bg-bg3 hover:text-fg0',ghost:'text-fg2 hover:text-fg0 hover:bg-bg2',danger:'bg-down/10 border border-down/30 text-down hover:bg-down/15'}[variant];
+  const s={sm:'px-2.5 py-1.5 text-xs',md:'px-3.5 py-2 text-sm',lg:'px-4 py-2.5 text-sm'}[size];
+  return <button type={type} onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${v} ${s} ${className}`}>{icon&&<Icon name={icon} size={size==='sm'?12:14}/>}{children}</button>;
+};
+
+const Tabs=({tabs,value,onChange,className=''})=>(
+  <div className={`inline-flex bg-bg2 border border-line rounded-md p-0.5 ${className}`}>
+    {tabs.map(t=><button key={t.value} onClick={()=>onChange(t.value)} className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${value===t.value?'bg-bg3 text-fg0':'text-fg3 hover:text-fg1'}`}>{t.label}</button>)}
+  </div>
+);
+
+const Card=({children,className='',padded=true})=><div className={`bg-bg1 border border-line rounded-xl ${padded?'p-5':''} ${className}`}>{children}</div>;
+
+const CardHeader=({title,subtitle,action,accent})=>(
+  <div className="flex items-start justify-between mb-4">
+    <div>
+      <div className="flex items-center gap-2">{accent&&<span className="w-1 h-4 rounded-full bg-gold"></span>}<div className="font-display text-sm font-semibold text-fg0">{title}</div></div>
+      {subtitle&&<div className="text-xs text-fg3 mt-1">{subtitle}</div>}
+    </div>
+    {action}
+  </div>
+);
+
+const StatCard=({label,value,delta,deltaLabel,icon,accent})=>{
+  const dPos=delta!=null&&delta>=0;
+  return(
+    <div className={`bg-bg1 border border-line rounded-xl p-5 relative overflow-hidden ${accent?'glow-gold':''}`}>
+      {accent&&<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent opacity-60"></div>}
+      <div className="flex items-start justify-between">
+        <div className="text-xs uppercase tracking-wider text-fg3 font-medium">{label}</div>
+        {icon&&<Icon name={icon} size={14} className="text-fg3"/>}
+      </div>
+      <div className="mt-3 font-display text-[26px] font-semibold tracking-tight num">{value}</div>
+      <div className="flex items-center gap-2 mt-2 text-xs">
+        {delta!=null&&<span className={`inline-flex items-center gap-0.5 num ${dPos?'text-up':'text-down'}`}><Icon name={dPos?'up':'down'} size={11} strokeWidth={2}/>{fmtPct(Math.abs(delta),2,false)}</span>}
+        {deltaLabel&&<span className="text-fg3">{deltaLabel}</span>}
+      </div>
+    </div>
+  );
+};
+
+const useLivePrices=()=>{
+  const [prices,setPrices]=useState(()=>Object.fromEntries(window.MOCK.PAIRS.map(p=>[p.symbol,p.price])));
+  const [flashes,setFlashes]=useState({});
+  useEffect(()=>{
+    const id=setInterval(()=>{
+      setPrices(prev=>{
+        const next={...prev},flash={};
+        for(const p of window.MOCK.PAIRS){const drift=(Math.random()-.5)*.0025;next[p.symbol]=prev[p.symbol]*(1+drift);flash[p.symbol]=drift>0?'up':'down'}
+        setFlashes(flash);return next;
+      });
+    },1800);
+    return()=>clearInterval(id);
+  },[]);
+  return {prices,flashes};
+};
+
+const ChartTooltip=({active,payload,label,formatter})=>{
+  if(!active||!payload?.length)return null;
+  return <div className="bg-bg1 border border-line2 rounded-md px-3 py-2 text-xs shadow-xl">{label!=null&&<div className="text-fg3 font-mono mb-1">{label}</div>}{payload.map((p,i)=><div key={i} className="flex items-center gap-2"><span className="w-2 h-2 rounded-sm" style={{background:p.color}}></span><span className="text-fg2">{p.name}:</span><span className="text-fg0 font-mono font-medium">{formatter?formatter(p.value,p.name):p.value}</span></div>)}</div>;
+};
+
+const Field=({label,icon,children})=>(
+  <label className="block">
+    <div className="text-[11px] uppercase tracking-wider text-fg3 font-medium mb-1.5">{label}</div>
+    <div className="flex items-center gap-2.5 bg-bg2 border border-line rounded-md px-3 py-2.5 focus-within:border-gold/60 transition-colors"><Icon name={icon} size={14} className="text-fg3"/>{children}</div>
+  </label>
+);
+
+const LoginPage=({onLogin})=>{
+  const [mode,setMode]=useState('login'),[step,setStep]=useState(1),[email,setEmail]=useState('alex.morgan@sentinelea.io'),[pwd,setPwd]=useState('demo-password'),[showPwd,setShowPwd]=useState(false),[apiKey,setApiKey]=useState(''),[apiSecret,setApiSecret]=useState(''),[showSecret,setShowSecret]=useState(false),[twofa,setTwofa]=useState(''),[loading,setLoading]=useState(false),[error,setError]=useState('');
+  const submit=e=>{e.preventDefault();setError('');if(!email.includes('@'))return setError('Please enter a valid email.');if(pwd.length<6)return setError('Password must be at least 6 characters.');setLoading(true);setTimeout(()=>{setLoading(false);onLogin({email})},900)};
+  return(
+    <div className="min-h-screen w-full bg-bg0 grid-bg relative overflow-hidden">
+      <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full opacity-20" style={{background:'radial-gradient(circle,#c9f25c 0%,transparent 60%)'}}></div>
+      <div className="absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full opacity-10" style={{background:'radial-gradient(circle,#18c19a 0%,transparent 60%)'}}></div>
+      <div className="relative grid lg:grid-cols-2 min-h-screen">
+        <div className="hidden lg:flex flex-col justify-between p-12 border-r border-line/60">
+          <Logo size={26}/>
+          <div>
+            <div className="font-display text-[42px] font-semibold leading-[1.05] tracking-tight max-w-[440px]">Algorithmic trading,<br/><span className="text-gold">audited every tick.</span></div>
+            <div className="mt-5 text-fg2 max-w-[420px] text-[15px] leading-relaxed">Connect your exchange via read-only API and watch your Expert Advisor in real-time. Live equity curves, position sizing telemetry, and one-click pause.</div>
+            <div className="mt-10 grid grid-cols-3 gap-3 max-w-[460px]">
+              {[{k:'Active users',v:'12,840'},{k:'Avg. monthly',v:'+4.62%'},{k:'Uptime',v:'99.98%'}].map(s=>(
+                <div key={s.k} className="bg-bg1/60 backdrop-blur border border-line rounded-lg p-3"><div className="text-[10px] uppercase tracking-wider text-fg3 font-medium">{s.k}</div><div className="font-display num text-lg font-semibold mt-1">{s.v}</div></div>
+              ))}
+            </div>
+          </div>
+          <div className="text-xs text-fg3 flex items-center gap-3"><Icon name="shield" size={12}/>API keys are encrypted at rest — read &amp; trade scopes only, never withdraw.</div>
+        </div>
+        <div className="flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-[420px]">
+            <div className="lg:hidden mb-8"><Logo size={24}/></div>
+            <div className="inline-flex bg-bg2 border border-line rounded-md p-0.5 mb-7">
+              {['login','register'].map(m=><button key={m} onClick={()=>{setMode(m);setStep(1);setError('')}} className={`px-4 py-1.5 text-xs font-medium rounded transition-colors capitalize ${mode===m?'bg-bg3 text-fg0':'text-fg3 hover:text-fg1'}`}>{m==='login'?'Sign in':'Create account'}</button>)}
+            </div>
+            <h1 className="font-display text-[28px] font-semibold tracking-tight">{mode==='login'?'Welcome back':step===1?'Create your account':'Connect your exchange'}</h1>
+            <p className="text-sm text-fg2 mt-1.5">{mode==='login'?'Sign in to access your trading dashboard.':step===1?'Set up credentials. We will connect your API on the next step.':'Paste your exchange API key. We never store withdraw scope.'}</p>
+            <form onSubmit={submit} className="mt-7 space-y-4">
+              {(mode==='login'||step===1)&&<>
+                <Field label="Email" icon="wallet"><input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-transparent outline-none text-sm text-fg0 placeholder:text-fg3" placeholder="you@email.com" autoFocus/></Field>
+                <Field label="Password" icon="key"><input type={showPwd?'text':'password'} value={pwd} onChange={e=>setPwd(e.target.value)} className="w-full bg-transparent outline-none text-sm text-fg0 placeholder:text-fg3" placeholder="••••••••"/><button type="button" onClick={()=>setShowPwd(!showPwd)} className="text-fg3 hover:text-fg1 p-0.5"><Icon name={showPwd?'eyeOff':'eye'} size={14}/></button></Field>
+                {mode==='login'&&<div className="flex items-center justify-between text-xs"><label className="flex items-center gap-2 text-fg2 cursor-pointer"><input type="checkbox" className="accent-lime-400 w-3.5 h-3.5"/> Remember me</label><a className="text-gold hover:text-gold-2 font-medium transition-colors cursor-pointer">Forgot password?</a></div>}
+              </>}
+              {mode==='register'&&step===2&&<>
+                <Field label="API Key" icon="key"><input type="text" value={apiKey} onChange={e=>setApiKey(e.target.value)} className="w-full bg-transparent outline-none text-sm text-fg0 font-mono" placeholder="xxxx-xxxx-xxxx-xxxx"/></Field>
+                <Field label="API Secret" icon="shield"><input type={showSecret?'text':'password'} value={apiSecret} onChange={e=>setApiSecret(e.target.value)} className="w-full bg-transparent outline-none text-sm text-fg0 font-mono" placeholder="••••••••••••••••"/><button type="button" onClick={()=>setShowSecret(!showSecret)} className="text-fg3 hover:text-fg1 p-0.5"><Icon name={showSecret?'eyeOff':'eye'} size={14}/></button></Field>
+                <Field label="2FA Code (optional)" icon="circle"><input type="text" maxLength={6} value={twofa} onChange={e=>setTwofa(e.target.value.replace(/\D/g,''))} className="w-full bg-transparent outline-none text-sm text-fg0 font-mono tracking-[0.3em]" placeholder="000000"/></Field>
+                <div className="rounded-md bg-bg2 border border-line2 p-3 text-xs text-fg2 leading-relaxed"><div className="flex gap-2 items-start"><Icon name="info" size={13} className="text-gold shrink-0 mt-0.5"/><div>Enable <span className="text-fg0 font-medium">Reading</span> and <span className="text-fg0 font-medium">Futures Trading</span> only. Withdrawal scope is never required.</div></div></div>
+              </>}
+              {error&&<div className="text-xs text-down bg-down/10 border border-down/30 rounded-md px-3 py-2">{error}</div>}
+              <Btn type="submit" variant="primary" className="w-full py-3" disabled={loading}>{loading?<span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-bg0/40 border-t-bg0 rounded-full animate-spin"></span>{mode==='login'?'Signing in…':'Verifying…'}</span>:mode==='login'?'Sign in to dashboard':step===1?'Continue':'Connect &amp; finish'}</Btn>
+              {mode==='register'&&<div className="flex items-center justify-center gap-1.5 text-[11px] text-fg3 pt-1"><div className={`w-6 h-0.5 rounded ${step>=1?'bg-gold':'bg-line'}`}></div><div className={`w-6 h-0.5 rounded ${step>=2?'bg-gold':'bg-line'}`}></div><span className="ml-1">Step {step} of 2</span></div>}
+              {mode==='register'&&step===1&&<button type="button" onClick={()=>setStep(2)} className="text-xs text-fg3 hover:text-fg1 w-full text-center pt-1">Skip and add API key later →</button>}
+            </form>
+            <div className="mt-8 text-center text-xs text-fg3">By signing in you agree to SentinelEA's Terms and Privacy Policy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Sidebar=({route,setRoute,eaStatus,onToggleEa,onLogout})=>(
+  <aside className="w-[232px] shrink-0 bg-bg1 border-r border-line h-screen sticky top-0 flex flex-col">
+    <div className="px-5 pt-5 pb-6"><Logo/></div>
+    <nav className="px-3 flex flex-col gap-1">
+      {[{id:'dashboard',label:'Dashboard',icon:'dashboard'},{id:'trades',label:'Trade History',icon:'list'},{id:'analytics',label:'Analytics',icon:'chart'},{id:'settings',label:'Settings',icon:'cog'}].map(item=>{const active=route===item.id;return(
+        <button key={item.id} onClick={()=>setRoute(item.id)} className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${active?'bg-bg3 text-fg0':'text-fg2 hover:text-fg0 hover:bg-bg2'}`}>
+          <Icon name={item.icon} size={16}/><span className="font-medium">{item.label}</span>{active&&<div className="ml-auto w-1 h-4 rounded-full bg-gold"></div>}
+        </button>
+      )})}
+    </nav>
+    <div className="mt-auto px-3 pb-4 flex flex-col gap-2">
+      <div className="bg-bg2 border border-line rounded-lg p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[11px] uppercase tracking-wider text-fg3">EA Status</div>
+          <span className={`w-1.5 h-1.5 rounded-full relative ${eaStatus==='active'?'bg-up pulse-dot text-up':'bg-fg3'}`}></span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">{eaStatus==='active'?<span className="text-up">Running</span>:<span className="text-fg2">Paused</span>}</div>
+          <button onClick={onToggleEa} className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors ${eaStatus==='active'?'border-line2 text-fg1 hover:bg-bg3':'border-gold/40 text-gold hover:bg-gold/10'}`}>
+            <Icon name={eaStatus==='active'?'pause':'play'} size={11}/>{eaStatus==='active'?'Pause':'Start'}
+          </button>
+        </div>
+      </div>
+      <button onClick={onLogout} className="flex items-center gap-2 px-3 py-2 text-sm text-fg3 hover:text-fg0 transition-colors"><Icon name="logout" size={14}/><span>Sign out</span></button>
+    </div>
+  </aside>
+);
+
+const Topbar=({title,subtitle,user})=>(
+  <div className="px-8 pt-6 pb-5 border-b border-line flex items-center gap-6">
+    <div className="min-w-0"><div className="font-display text-[22px] font-semibold tracking-tight">{title}</div>{subtitle&&<div className="text-sm text-fg2 mt-0.5">{subtitle}</div>}</div>
+    <div className="ml-auto flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-2 bg-bg2 border border-line rounded-md px-3 py-1.5 w-[260px] text-fg3"><Icon name="search" size={14}/><input className="bg-transparent outline-none text-sm text-fg1 placeholder:text-fg3 w-full" placeholder="Search pair, trade ID…"/><span className="font-mono text-[10px] border border-line2 rounded px-1 py-0.5">⌘K</span></div>
+      <button className="w-9 h-9 rounded-md border border-line bg-bg2 hover:bg-bg3 text-fg1 flex items-center justify-center relative"><Icon name="bell" size={15}/><span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-gold"></span></button>
+      <div className="flex items-center gap-2.5 bg-bg2 border border-line rounded-md pl-1 pr-3 py-1">
+        <div className="w-7 h-7 rounded bg-gradient-to-br from-lime-300 to-lime-700 text-bg0 flex items-center justify-center font-display font-semibold text-sm">{user.initials}</div>
+        <div className="text-xs leading-tight"><div className="font-medium text-fg0">{user.name}</div><div className="text-fg3 font-mono text-[10px]">{user.tier}</div></div>
+      </div>
+    </div>
+  </div>
+);
+
+const Metric=({label,value,tone})=>{const c=tone==='up'?'text-up':tone==='down'?'text-down':'text-fg0';return<div><div className="text-[11px] uppercase tracking-wider text-fg3 font-medium">{label}</div><div className={`font-display num text-xl font-semibold mt-1 ${c}`}>{value}</div></div>};
+
+const DashboardPage=({eaStatus})=>{
+  const {SUMMARY,EQUITY,TRADES}=window.MOCK,{prices,flashes}=useLivePrices(),[range,setRange]=useState('1M');
+  const recentClosed=TRADES.filter(t=>t.status==='CLOSED').slice(0,6),open=TRADES.filter(t=>t.status==='OPEN');
+  const eqData=useMemo(()=>{const f={'1W':7,'1M':30,'3M':90,'ALL':999}[range]||999,cut=Date.now()-f*86400000;return EQUITY.filter(p=>p.t>=cut).map(p=>({...p,label:new Date(p.t).toLocaleDateString('en-US',{month:'short',day:'2-digit'})}));},[range]);
+  const eqChg=eqData.length>1?eqData[eqData.length-1].equity-eqData[0].equity:0,eqPct=eqData.length>1?(eqChg/eqData[0].equity)*100:0;
+  return(
+    <div className="px-8 py-6 space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Balance" value={fmtUsd(SUMMARY.balance)} delta={(SUMMARY.totalPnl/SUMMARY.startBalance)*100} deltaLabel={`${fmtUsd(SUMMARY.totalPnl,{sign:true})} all-time`} icon="wallet" accent/>
+        <StatCard label="Today's P&L" value={fmtUsd(218.42,{sign:true})} delta={1.21} deltaLabel="vs yesterday" icon="flash"/>
+        <StatCard label="Win Rate" value={SUMMARY.winRate.toFixed(1)+'%'} delta={2.4} deltaLabel={`${SUMMARY.wins}W / ${SUMMARY.losses}L`} icon="target"/>
+        <StatCard label="Open Positions" value={String(SUMMARY.openTrades).padStart(2,'0')} deltaLabel={`Unrealized ${fmtUsd(SUMMARY.openPnl,{sign:true})}`} icon="activity"/>
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card className="xl:col-span-2 p-0">
+          <div className="p-5 flex items-start justify-between">
+            <div><CardHeader title="Equity Curve" subtitle="Account value over time" accent/><div className="flex items-baseline gap-3 mt-1"><div className="font-display num text-[32px] font-semibold tracking-tight">{fmtUsd(eqData[eqData.length-1]?.equity||0)}</div><div className={`num text-sm font-medium ${eqChg>=0?'text-up':'text-down'}`}>{fmtUsd(eqChg,{sign:true})} ({fmtPct(eqPct)})</div></div></div>
+            <Tabs tabs={[{label:'1W',value:'1W'},{label:'1M',value:'1M'},{label:'3M',value:'3M'},{label:'ALL',value:'ALL'}]} value={range} onChange={setRange}/>
+          </div>
+          <div className="h-[280px] px-2 pb-3"><SvgArea data={eqData} dk="equity" color="#c9f25c" fy={v=>'$'+(v/1000).toFixed(1)+'k'} refY={10000} h={280}/></div>
+        </Card>
+        <Card className="p-0">
+          <div className="p-5 pb-3"><CardHeader title="Open Positions" subtitle={`${open.length} active`} accent action={<Pill tone={eaStatus==='active'?'up':'muted'}>{eaStatus==='active'?'● LIVE':'● PAUSED'}</Pill>}/></div>
+          <div className="divide-y divide-line">
+            {open.map(t=>{const live=prices[t.pair]||t.entryPrice,dir=t.side==='LONG'?1:-1,livePnl=(live-t.entryPrice)*t.qty*dir,livePct=((live-t.entryPrice)/t.entryPrice)*100*dir,pos=livePnl>=0;return(
+              <div key={t.id} className="px-5 py-3 hover:bg-bg2/40 transition-colors"><div className="flex items-center gap-3"><PairToken base={t.base} size={26}/><div className="min-w-0 flex-1"><div className="flex items-center gap-1.5"><span className="text-sm font-medium font-display">{t.pair}</span><Pill tone={t.side==='LONG'?'up':'down'}>{t.side}</Pill><span className="text-[10px] text-fg3 font-mono">{t.leverage}×</span></div><div className="text-[11px] text-fg3 font-mono mt-0.5">Entry {fmtPrice(t.entryPrice)} · {relTime(t.openedAt)}</div></div><div className="text-right"><div className={`num text-sm font-semibold ${pos?'text-up':'text-down'}`}>{fmtUsd(livePnl,{sign:true})}</div><div className={`num text-[11px] ${pos?'text-up':'text-down'}`}>{fmtPct(livePct)}</div></div></div></div>
+            )})}
+            {!open.length&&<div className="px-5 py-10 text-center text-fg3 text-sm">No open positions.</div>}
+          </div>
+        </Card>
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card><CardHeader title="Performance Metrics" accent/><div className="grid grid-cols-2 gap-x-6 gap-y-4"><Metric label="Profit Factor" value={SUMMARY.profitFactor.toFixed(2)} tone="up"/><Metric label="Sharpe Ratio" value={SUMMARY.sharpe.toFixed(2)} tone="up"/><Metric label="Max Drawdown" value={fmtPct(SUMMARY.maxDD,2,false)} tone="down"/><Metric label="Avg Win" value={fmtUsd(SUMMARY.avgWin)} tone="up"/><Metric label="Avg Loss" value={'-'+fmtUsd(SUMMARY.avgLoss)} tone="down"/><Metric label="Total Trades" value={String(SUMMARY.totalTrades)} tone="neutral"/></div></Card>
+        <Card><CardHeader title="Recent Trades" accent action={<Btn variant="ghost" size="sm">View all →</Btn>}/><div className="space-y-2.5">{recentClosed.map(t=><div key={t.id} className="flex items-center gap-2.5 text-xs"><PairToken base={t.base} size={20}/><div className="flex-1 min-w-0"><div className="flex items-center gap-1.5"><span className="font-medium font-display text-fg0">{t.pair}</span><span className={t.side==='LONG'?'text-up':'text-down'}>{t.side}</span></div><div className="text-[10px] text-fg3 font-mono">{fmtDate(t.closedAt)}</div></div><div className={`num font-medium ${t.pnl>=0?'text-up':'text-down'}`}>{fmtUsd(t.pnl,{sign:true})}</div></div>)}</div></Card>
+        <Card><CardHeader title="Market Watch" subtitle="Live spot prices" accent action={<span className="flex items-center gap-1.5 text-[10px] text-fg3 font-mono"><span className="w-1.5 h-1.5 rounded-full bg-up pulse-dot relative text-up"></span>WS</span>}/><div className="space-y-2">{window.MOCK.PAIRS.slice(0,6).map(p=>{const px=prices[p.symbol],drift=(px-p.price)/p.price*100,pos=drift>=0;return(<div key={p.symbol} className={`flex items-center gap-2.5 px-2 py-1.5 rounded text-xs ${flashes[p.symbol]==='up'?'ticker-up':flashes[p.symbol]==='down'?'ticker-down':''}`}><PairToken base={p.base} size={18}/><span className="font-display font-medium">{p.symbol}</span><span className="num text-fg2 ml-auto">${fmtPrice(px)}</span><span className={`num w-14 text-right ${pos?'text-up':'text-down'}`}>{fmtPct(drift,2)}</span></div>)})}</div></Card>
+      </div>
+    </div>
+  );
+};
+
+const Select=({label,value,onChange,options})=>(
+  <div className="relative"><select value={value} onChange={e=>onChange(e.target.value)} className="bg-bg2 border border-line rounded-md pl-3 pr-8 py-1.5 text-sm text-fg1 outline-none hover:border-line2 appearance-none cursor-pointer">{options.map(o=><option key={o.v} value={o.v}>{label}: {o.l}</option>)}</select><Icon name="down" size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-fg3 pointer-events-none"/></div>
+);
+
+const TradesPage=()=>{
+  const {TRADES}=window.MOCK,[side,setSide]=useState('all'),[pair,setPair]=useState('all'),[status,setStatus]=useState('all'),[q,setQ]=useState(''),[page,setPage]=useState(0),PS=14;
+  const filtered=useMemo(()=>TRADES.filter(t=>{if(side!=='all'&&t.side!==side)return false;if(pair!=='all'&&t.pair!==pair)return false;if(status!=='all'&&t.status!==status)return false;if(q&&!(`${t.pair} ${t.id}`).toLowerCase().includes(q.toLowerCase()))return false;return true}),[side,pair,status,q]);
+  const pd=filtered.slice(page*PS,(page+1)*PS),totalPnl=filtered.filter(t=>t.status==='CLOSED').reduce((s,t)=>s+t.pnl,0),wins=filtered.filter(t=>t.status==='CLOSED'&&t.pnl>0).length,closed=filtered.filter(t=>t.status==='CLOSED').length;
+  return(
+    <div className="px-8 py-6 space-y-5">
+      <Card padded={false} className="p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-bg2 border border-line rounded-md px-3 py-1.5 w-[260px]"><Icon name="search" size={14} className="text-fg3"/><input value={q} onChange={e=>{setQ(e.target.value);setPage(0)}} className="bg-transparent outline-none text-sm w-full placeholder:text-fg3" placeholder="Search pair or trade ID…"/></div>
+          <Select label="Side" value={side} onChange={v=>{setSide(v);setPage(0)}} options={[{v:'all',l:'All'},{v:'LONG',l:'Long'},{v:'SHORT',l:'Short'}]}/>
+          <Select label="Pair" value={pair} onChange={v=>{setPair(v);setPage(0)}} options={[{v:'all',l:'All pairs'},...window.MOCK.PAIRS.map(p=>({v:p.symbol,l:p.symbol}))]}/>
+          <Select label="Status" value={status} onChange={v=>{setStatus(v);setPage(0)}} options={[{v:'all',l:'All'},{v:'OPEN',l:'Open'},{v:'CLOSED',l:'Closed'}]}/>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="text-xs text-fg3"><span className="num text-fg1">{filtered.length}</span> results · <span className={`num font-medium ${totalPnl>=0?'text-up':'text-down'}`}>{fmtUsd(totalPnl,{sign:true})}</span> P&L · <span className="num text-fg1">{closed?((wins/closed)*100).toFixed(1):'0'}%</span> WR</div>
+            <Btn variant="default" size="sm" icon="download">Export</Btn>
+          </div>
+        </div>
+      </Card>
+      <Card padded={false}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[11px] uppercase tracking-wider text-fg3 border-b border-line"><th className="px-5 py-3 font-medium">Pair</th><th className="px-3 py-3 font-medium">Side</th><th className="px-3 py-3 font-medium">Strategy</th><th className="px-3 py-3 font-medium text-right">Size</th><th className="px-3 py-3 font-medium text-right">Entry</th><th className="px-3 py-3 font-medium text-right">Exit</th><th className="px-3 py-3 font-medium text-right">P&L</th><th className="px-3 py-3 font-medium text-right">P&L %</th><th className="px-3 py-3 font-medium">Opened</th><th className="px-3 py-3 font-medium">Status</th><th className="px-5 py-3"></th></tr></thead>
+            <tbody>
+              {pd.map(t=>(
+                <tr key={t.id} className="border-b border-line/60 hover:bg-bg2/40 transition-colors">
+                  <td className="px-5 py-3"><div className="flex items-center gap-2.5"><PairToken base={t.base} size={22}/><div><div className="font-medium font-display">{t.pair}</div><div className="text-[10px] text-fg3 font-mono">{t.id} · {t.leverage}×</div></div></div></td>
+                  <td className="px-3 py-3"><Pill tone={t.side==='LONG'?'up':'down'}>{t.side}</Pill></td>
+                  <td className="px-3 py-3 text-fg2 text-xs">{t.strategy}</td>
+                  <td className="px-3 py-3 text-right num text-fg2">{fmtUsd(t.sizeUsd,{decimals:0})}</td>
+                  <td className="px-3 py-3 text-right num text-fg1">{fmtPrice(t.entryPrice)}</td>
+                  <td className="px-3 py-3 text-right num text-fg1">{t.exitPrice?fmtPrice(t.exitPrice):<span className="text-fg3">—</span>}</td>
+                  <td className={`px-3 py-3 text-right num font-medium ${t.pnl>=0?'text-up':'text-down'}`}>{fmtUsd(t.pnl,{sign:true})}</td>
+                  <td className={`px-3 py-3 text-right num text-xs ${t.pnl>=0?'text-up':'text-down'}`}>{fmtPct(t.pnlPct)}</td>
+                  <td className="px-3 py-3 text-fg3 font-mono text-xs">{fmtDate(t.openedAt)}</td>
+                  <td className="px-3 py-3"><Pill tone={t.status==='OPEN'?'gold':'muted'}>{t.status}</Pill></td>
+                  <td className="px-5 py-3 text-right"><button className="text-fg3 hover:text-fg0 p-1"><Icon name="arrowRight" size={14}/></button></td>
+                </tr>
+              ))}
+              {!pd.length&&<tr><td colSpan={11} className="px-5 py-16 text-center text-fg3 text-sm">No trades match these filters.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3 border-t border-line">
+          <div className="text-xs text-fg3">Showing <span className="text-fg1 num">{page*PS+1}</span>–<span className="text-fg1 num">{Math.min((page+1)*PS,filtered.length)}</span> of <span className="text-fg1 num">{filtered.length}</span></div>
+          <div className="flex items-center gap-1"><Btn variant="default" size="sm" disabled={page===0} onClick={()=>setPage(p=>Math.max(0,p-1))}>← Prev</Btn><Btn variant="default" size="sm" disabled={(page+1)*PS>=filtered.length} onClick={()=>setPage(p=>p+1)}>Next →</Btn></div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const Donut=({wins,losses})=>{const total=wins+losses,wp=(wins/total)*100,C=2*Math.PI*56,wl=(wp/100)*C;return(
+  <div className="flex items-center gap-5">
+    <svg width="140" height="140" viewBox="0 0 140 140" className="-rotate-90">
+      <circle cx="70" cy="70" r="56" stroke="#f4516c" strokeWidth="14" fill="none" opacity="0.85"/>
+      <circle cx="70" cy="70" r="56" stroke="#18c19a" strokeWidth="14" fill="none" strokeDasharray={`${wl} ${C-wl}`} strokeLinecap="butt"/>
+      <text x="70" y="68" textAnchor="middle" transform="rotate(90 70 70)" fill="#f5f6f8" fontSize="22" fontWeight="600" fontFamily="Sora">{wp.toFixed(1)}%</text>
+      <text x="70" y="86" textAnchor="middle" transform="rotate(90 70 70)" fill="#8a90a0" fontSize="10" fontFamily="JetBrains Mono">WIN RATE</text>
+    </svg>
+    <div className="space-y-3"><div><div className="flex items-center gap-2 text-xs"><span className="w-2 h-2 rounded-sm bg-up"></span><span className="text-fg2">Winning</span></div><div className="font-display num text-xl font-semibold text-up mt-1">{wins}</div></div><div><div className="flex items-center gap-2 text-xs"><span className="w-2 h-2 rounded-sm bg-down"></span><span className="text-fg2">Losing</span></div><div className="font-display num text-xl font-semibold text-down mt-1">{losses}</div></div></div>
+  </div>
+)};
+
+const AnalyticsPage=()=>{
+  const {EQUITY,MONTHLY,PAIR_PERF,HOURLY,SUMMARY}=window.MOCK;
+  const eqData=EQUITY.map(p=>({...p,label:new Date(p.t).toLocaleDateString('en-US',{month:'short',day:'2-digit'})}));
+  const max=Math.max(...HOURLY.map(h=>h.v)),days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  return(
+    <div className="px-8 py-6 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2 p-0">
+          <div className="p-5"><CardHeader title="Equity &amp; Drawdown" subtitle="120-day overview" accent/></div>
+          <div className="h-[260px] px-2 pb-3"><SvgArea data={eqData} dk="equity" color="#c9f25c" fy={v=>'$'+(v/1000).toFixed(1)+'k'} h={260}/></div>
+        </Card>
+        <Card>
+          <CardHeader title="Drawdown" subtitle="From peak equity" accent/>
+          <div className="h-[230px]"><SvgArea data={eqData} dk="drawdown" color="#f4516c" fy={v=>v.toFixed(1)+'%'} h={230}/></div>
+          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-line"><Metric label="Max DD" value={fmtPct(SUMMARY.maxDD,2,false)} tone="down"/><Metric label="Recovery" value="18d" tone="neutral"/></div>
+        </Card>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2"><CardHeader title="Monthly Returns" subtitle="Net P&L by month" accent/><div className="h-[240px]"><SvgBars data={MONTHLY} dk="return" lk="month" fy={v=>v.toFixed(0)+'%'} h={240}/></div></Card>
+        <Card><CardHeader title="Win / Loss Split" accent/><Donut wins={SUMMARY.wins} losses={SUMMARY.losses}/></Card>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2 p-0">
+          <div className="p-5"><CardHeader title="Performance by Pair" subtitle="Cumulative P&L" accent/></div>
+          <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-[11px] uppercase tracking-wider text-fg3 border-y border-line"><th className="px-5 py-2.5 font-medium">Pair</th><th className="px-3 py-2.5 font-medium text-right">Trades</th><th className="px-3 py-2.5 font-medium text-right">Win Rate</th><th className="px-3 py-2.5 font-medium text-right">P&L</th><th className="px-5 py-2.5 font-medium">Distribution</th></tr></thead><tbody>{PAIR_PERF.map(p=>{const mP=Math.max(...PAIR_PERF.map(x=>Math.abs(x.pnl))),w=Math.abs(p.pnl)/mP*100;return(<tr key={p.pair} className="border-b border-line/60 hover:bg-bg2/40"><td className="px-5 py-2.5"><div className="flex items-center gap-2.5"><PairToken base={p.base} size={20}/><span className="font-display font-medium">{p.pair}</span></div></td><td className="px-3 py-2.5 text-right num text-fg2">{p.trades}</td><td className="px-3 py-2.5 text-right num text-fg1">{p.winRate}%</td><td className={`px-3 py-2.5 text-right num font-medium ${p.pnl>=0?'text-up':'text-down'}`}>{fmtUsd(p.pnl,{sign:true})}</td><td className="px-5 py-2.5 w-[200px]"><div className="h-1.5 rounded-full bg-bg3 overflow-hidden"><div className={`h-full rounded-full ${p.pnl>=0?'bg-up':'bg-down'}`} style={{width:w+'%'}}></div></div></td></tr>)})}</tbody></table></div>
+        </Card>
+        <Card>
+          <CardHeader title="Trading Activity" subtitle="Trades by hour &amp; day (UTC)" accent/>
+          <div className="grid grid-cols-[auto_1fr] gap-1.5 mt-1">
+            <div></div><div className="grid grid-cols-12 text-[9px] text-fg3 font-mono">{[0,4,8,12,16,20].map(h=><div key={h} className="col-span-2 text-center">{h}h</div>)}</div>
+            {days.map((d,di)=><React.Fragment key={d}><div className="text-[10px] text-fg3 font-mono pr-1 leading-[14px]">{d}</div><div className="grid gap-[2px]" style={{gridTemplateColumns:'repeat(24,1fr)'}}>{HOURLY.filter(h=>h.d===di).map(h=>{const a=h.v/max;return<div key={h.h} className="h-[14px] rounded-sm" style={{background:`rgba(201,242,92,${.12+a*.78})`}} title={`${d} ${h.h}h: ${h.v}`}></div>})}</div></React.Fragment>)}
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-[10px] text-fg3 font-mono"><span>Less</span>{[.15,.35,.55,.75,.95].map((a,i)=><div key={i} className="w-4 h-3 rounded-sm" style={{background:`rgba(201,242,92,${a})`}}></div>)}<span>More</span></div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const KV=({label,value})=><div><div className="text-[10px] uppercase tracking-wider text-fg3 font-medium">{label}</div><div className="text-sm text-fg1 mt-1">{value}</div></div>;
+
+const ApiSettings=()=>{
+  const keys=[{id:1,name:'Primary — Spot',key:'••••••••••••••••••••AB7F',scope:['Read','Trade'],status:'active',ip:'203.0.113.42',added:'Mar 12, 2026'},{id:2,name:'Futures Account',key:'••••••••••••••••••••E91C',scope:['Read','Trade','Futures'],status:'active',ip:'203.0.113.42',added:'Apr 03, 2026'}];
+  return<><Card><div className="flex items-start justify-between"><div><div className="font-display text-lg font-semibold">Connected Exchange API Keys</div><div className="text-sm text-fg2 mt-1">Read-only and trading scopes. Never include withdrawal permissions.</div></div><Btn variant="primary" icon="plus">Add API Key</Btn></div><div className="mt-5 space-y-3">{keys.map(k=><div key={k.id} className="border border-line rounded-lg p-4"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-md bg-bg3 flex items-center justify-center text-gold"><Icon name="key" size={16}/></div><div><div className="font-medium font-display">{k.name}</div><div className="font-mono text-xs text-fg3 mt-0.5">{k.key}</div></div><div className="ml-auto flex items-center gap-2"><Pill tone="up">● {k.status}</Pill><Btn variant="ghost" size="sm" icon="copy">Copy</Btn><Btn variant="danger" size="sm">Revoke</Btn></div></div><div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-line"><KV label="Scopes" value={<div className="flex gap-1 mt-0.5">{k.scope.map(s=><Pill key={s}>{s}</Pill>)}</div>}/><KV label="IP Whitelist" value={<span className="font-mono text-xs">{k.ip}</span>}/><KV label="Added" value={k.added}/><KV label="Last Used" value="14 minutes ago"/></div></div>)}</div></Card><Card><div className="flex items-start gap-3"><Icon name="shield" size={18} className="text-gold mt-0.5"/><div><div className="font-medium">Security Policy</div><div className="text-sm text-fg2 mt-1 max-w-[640px]">All keys are stored encrypted with AES-256 + a per-user envelope key in HSM. We can never see your secret in plaintext. Withdrawal scope is rejected during ingest.</div></div></div></Card></>;
+};
+
+const EaSettings=({eaStatus,setEaStatus})=>{
+  const [risk,setRisk]=useState(1.5),[maxPos,setMaxPos]=useState(6),[strategy,setStrategy]=useState('balanced'),[pairs,setPairs]=useState(['BTCUSDT','ETHUSDT','SOLUSDT']);
+  const togglePair=p=>setPairs(prev=>prev.includes(p)?prev.filter(x=>x!==p):[...prev,p]);
+  return<>
+    <Card><div className="flex items-center justify-between"><div><div className="font-display text-lg font-semibold">EA Engine</div><div className="text-sm text-fg2 mt-1">Master control for your Expert Advisor.</div></div><div className="flex items-center gap-3"><span className={`text-sm font-medium ${eaStatus==='active'?'text-up':'text-fg2'}`}>{eaStatus==='active'?'Running':'Paused'}</span><button onClick={()=>setEaStatus(eaStatus==='active'?'paused':'active')} className={`relative w-12 h-6 rounded-full transition-colors ${eaStatus==='active'?'bg-gold':'bg-bg3'}`}><span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-bg0 rounded-full shadow transition-transform ${eaStatus==='active'?'translate-x-6':''}`}></span></button></div></div></Card>
+    <Card><CardHeader title="Risk Management" subtitle="Position sizing &amp; exposure caps" accent/><div className="grid grid-cols-2 gap-x-8 gap-y-5"><div><div className="flex items-center justify-between mb-2"><div className="text-sm font-medium">Risk per trade</div><div className="num text-sm text-gold">{risk.toFixed(1)}%</div></div><input type="range" min={0.1} max={5} step={0.1} value={risk} onChange={e=>setRisk(+e.target.value)} className="w-full accent-lime-400"/><div className="text-xs text-fg3 mt-1 font-mono">{(risk*100).toFixed(0)} bps of account equity</div></div><div><div className="flex items-center justify-between mb-2"><div className="text-sm font-medium">Max concurrent positions</div><div className="num text-sm text-gold">{maxPos}</div></div><input type="range" min={1} max={20} step={1} value={maxPos} onChange={e=>setMaxPos(+e.target.value)} className="w-full accent-lime-400"/><div className="text-xs text-fg3 mt-1 font-mono">Across all pairs &amp; strategies</div></div></div></Card>
+    <Card><CardHeader title="Strategy" subtitle="Behavior profile for the EA" accent/><div className="grid grid-cols-1 md:grid-cols-3 gap-3">{[{id:'conservative',name:'Conservative',desc:'Slower entries, wider stops, focus on majors.',meta:'~2-3% / mo'},{id:'balanced',name:'Balanced',desc:'Adaptive sizing, mid-frequency trend & mean-reversion.',meta:'~4-7% / mo'},{id:'aggressive',name:'Aggressive',desc:'Higher leverage, more pairs, breakout-heavy.',meta:'~8-14% / mo'}].map(p=><button key={p.id} onClick={()=>setStrategy(p.id)} className={`text-left rounded-lg border p-4 transition-colors ${strategy===p.id?'border-gold/60 bg-gold/5':'border-line hover:border-line2 bg-bg2'}`}><div className="flex items-center justify-between"><div className="font-display font-semibold">{p.name}</div>{strategy===p.id&&<Icon name="check" size={14} className="text-gold"/>}</div><div className="text-xs text-fg2 mt-1.5 leading-relaxed">{p.desc}</div><div className="font-mono text-[10px] text-fg3 mt-3 uppercase tracking-wider">{p.meta}</div></button>)}</div></Card>
+    <Card><CardHeader title="Trading Universe" subtitle="Pairs the EA is allowed to trade" accent/><div className="flex flex-wrap gap-2">{window.MOCK.PAIRS.map(p=>{const on=pairs.includes(p.symbol);return<button key={p.symbol} onClick={()=>togglePair(p.symbol)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors ${on?'border-gold/50 bg-gold/10 text-fg0':'border-line bg-bg2 text-fg2 hover:text-fg0'}`}><PairToken base={p.base} size={18}/><span className="font-display font-medium">{p.symbol}</span>{on&&<Icon name="check" size={12} className="text-gold"/>}</button>})}</div></Card>
+  </>;
+};
+
+const NotifySettings=()=>{
+  const [prefs,setPrefs]=useState({tradeOpen:{email:true,push:true,tg:false},tradeClose:{email:false,push:true,tg:true},drawdown:{email:true,push:true,tg:true},eaError:{email:true,push:true,tg:true},weekly:{email:true,push:false,tg:false}});
+  const rows=[{id:'tradeOpen',label:'Trade opened',desc:'When a new position is entered'},{id:'tradeClose',label:'Trade closed',desc:'When a position is closed (TP/SL or manual)'},{id:'drawdown',label:'Drawdown alert',desc:'When drawdown exceeds 5% from peak'},{id:'eaError',label:'EA error',desc:'Exchange API errors, connection drops, halts'},{id:'weekly',label:'Weekly summary',desc:"Sunday digest with the week's P&L and trades"}];
+  const toggle=(row,ch)=>setPrefs(p=>({...p,[row]:{...p[row],[ch]:!p[row][ch]}}));
+  return<Card padded={false}><div className="p-5"><CardHeader title="Notifications" subtitle="Choose how you'd like to be reached." accent/></div><table className="w-full text-sm"><thead><tr className="text-left text-[11px] uppercase tracking-wider text-fg3 border-y border-line"><th className="px-5 py-3 font-medium">Event</th><th className="px-3 py-3 font-medium text-center">Email</th><th className="px-3 py-3 font-medium text-center">Push</th><th className="px-5 py-3 font-medium text-center">Telegram</th></tr></thead><tbody>{rows.map(r=><tr key={r.id} className="border-b border-line/60"><td className="px-5 py-4"><div className="font-medium">{r.label}</div><div className="text-xs text-fg3 mt-0.5">{r.desc}</div></td>{['email','push','tg'].map(ch=><td key={ch} className={`py-4 ${ch==='tg'?'px-5':'px-3'} text-center`}><button onClick={()=>toggle(r.id,ch)} className={`relative w-10 h-5 rounded-full transition-colors ${prefs[r.id][ch]?'bg-gold':'bg-bg3'}`}><span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-bg0 rounded-full transition-transform ${prefs[r.id][ch]?'translate-x-5':''}`}></span></button></td>)}</tr>)}</tbody></table></Card>;
+};
+
+const SecuritySettings=()=><>
+  <Card><CardHeader title="Two-Factor Authentication" accent/><div className="flex items-center justify-between"><div className="text-sm text-fg2 max-w-[480px]">Use an authenticator app (Authy, 1Password, Google Authenticator) to require a 6-digit code on every sign-in.</div><Btn variant="primary">Enable 2FA</Btn></div></Card>
+  <Card><CardHeader title="Active Sessions" accent/><div className="space-y-2">{[{d:'MacBook Pro · Chrome 134',ip:'203.0.113.42',city:'Istanbul, TR',when:'Active now',cur:true},{d:'iPhone 16 · SentinelEA iOS',ip:'203.0.113.99',city:'Istanbul, TR',when:'2 hours ago',cur:false},{d:'Linux · Firefox 128',ip:'198.51.100.7',city:'Frankfurt, DE',when:'3 days ago',cur:false}].map((s,i)=><div key={i} className="flex items-center gap-4 p-3 rounded-md hover:bg-bg2/40 border border-transparent hover:border-line"><div className="w-8 h-8 rounded-md bg-bg3 flex items-center justify-center text-fg2"><Icon name="circle" size={14}/></div><div className="flex-1"><div className="text-sm font-medium">{s.d} {s.cur&&<Pill tone="up" className="ml-2">Current</Pill>}</div><div className="text-xs text-fg3 font-mono mt-0.5">{s.ip} · {s.city} · {s.when}</div></div>{!s.cur&&<Btn variant="danger" size="sm">Sign out</Btn>}</div>)}</div></Card>
+</>;
+
+const SettingsPage=({eaStatus,setEaStatus})=>{
+  const [section,setSection]=useState('api');
+  return<div className="px-8 py-6"><div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6"><div className="flex lg:flex-col gap-1">{[{id:'api',label:'API Keys',icon:'key'},{id:'ea',label:'EA Configuration',icon:'cog'},{id:'notify',label:'Notifications',icon:'bell'},{id:'security',label:'Security',icon:'shield'}].map(s=><button key={s.id} onClick={()=>setSection(s.id)} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm transition-colors ${section===s.id?'bg-bg2 text-fg0 border border-line':'text-fg2 hover:text-fg0 border border-transparent'}`}><Icon name={s.icon} size={14}/>{s.label}</button>)}</div><div className="space-y-5">{section==='api'&&<ApiSettings/>}{section==='ea'&&<EaSettings eaStatus={eaStatus} setEaStatus={setEaStatus}/>}{section==='notify'&&<NotifySettings/>}{section==='security'&&<SecuritySettings/>}</div></div></div>;
+};
+
+const TITLES={dashboard:{title:'Dashboard',subtitle:'Real-time overview of your Expert Advisor'},trades:{title:'Trade History',subtitle:'Every position the EA has opened and closed'},analytics:{title:'Analytics',subtitle:'Performance breakdown across time, pairs, and risk'},settings:{title:'Settings',subtitle:'API keys, EA configuration, and account preferences'}};
+
+const App=()=>{
+  const [authed,setAuthed]=useState(false),[user,setUser]=useState({email:'',name:'Alex Morgan',initials:'AM',tier:'PRO'}),[route,setRoute]=useState('dashboard'),[eaStatus,setEaStatus]=useState('active');
+  const onLogin=info=>{setUser(u=>({...u,email:info.email}));setAuthed(true)};
+  if(!authed)return<LoginPage onLogin={onLogin}/>;
+  const {title,subtitle}=TITLES[route];
+  return(
+    <div className="flex min-h-screen bg-bg0">
+      <Sidebar route={route} setRoute={setRoute} eaStatus={eaStatus} onToggleEa={()=>setEaStatus(s=>s==='active'?'paused':'active')} onLogout={()=>setAuthed(false)}/>
+      <main className="flex-1 min-w-0">
+        <Topbar title={title} subtitle={subtitle} user={user}/>
+        <div>{route==='dashboard'&&<DashboardPage eaStatus={eaStatus}/>}{route==='trades'&&<TradesPage/>}{route==='analytics'&&<AnalyticsPage/>}{route==='settings'&&<SettingsPage eaStatus={eaStatus} setEaStatus={setEaStatus}/>}</div>
+      </main>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
