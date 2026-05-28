@@ -291,8 +291,18 @@ const LoginPage=({onLogin})=>{
   );
 };
 
+const MobileNav=({route,setRoute})=>(
+  <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-bg1/95 backdrop-blur border-t border-line flex items-stretch" style={{paddingBottom:'env(safe-area-inset-bottom)'}}>
+    {[{id:'dashboard',label:'Dashboard',icon:'dashboard'},{id:'trades',label:'Trades',icon:'list'},{id:'analytics',label:'Stats',icon:'chart'},{id:'settings',label:'Settings',icon:'cog'}].map(item=>{const active=route===item.id;return(
+      <button key={item.id} onClick={()=>setRoute(item.id)} className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors ${active?'text-gold':'text-fg3'}`}>
+        <Icon name={item.icon} size={18}/>{item.label}
+      </button>
+    )})}
+  </nav>
+);
+
 const Sidebar=({route,setRoute,eaStatus,onToggleEa,onLogout})=>(
-  <aside className="w-[232px] shrink-0 bg-bg1 border-r border-line h-screen sticky top-0 flex flex-col">
+  <aside className="hidden md:flex w-[232px] shrink-0 bg-bg1 border-r border-line h-screen sticky top-0 flex-col">
     <div className="px-5 pt-5 pb-6"><Logo/></div>
     <nav className="px-3 flex flex-col gap-1">
       {[{id:'dashboard',label:'Dashboard',icon:'dashboard'},{id:'trades',label:'Trade History',icon:'list'},{id:'analytics',label:'Analytics',icon:'chart'},{id:'settings',label:'Settings',icon:'cog'}].map(item=>{const active=route===item.id;return(
@@ -320,14 +330,15 @@ const Sidebar=({route,setRoute,eaStatus,onToggleEa,onLogout})=>(
 );
 
 const Topbar=({title,subtitle,user})=>(
-  <div className="px-8 pt-6 pb-5 border-b border-line flex items-center gap-6">
-    <div className="min-w-0"><div className="font-display text-[22px] font-semibold tracking-tight">{title}</div>{subtitle&&<div className="text-sm text-fg2 mt-0.5">{subtitle}</div>}</div>
+  <div className="px-4 md:px-8 pt-4 md:pt-6 pb-4 md:pb-5 border-b border-line flex items-center gap-3 md:gap-6">
+    <div className="md:hidden"><Logo size={18}/></div>
+    <div className="min-w-0"><div className="font-display text-[18px] md:text-[22px] font-semibold tracking-tight">{title}</div>{subtitle&&<div className="hidden md:block text-sm text-fg2 mt-0.5">{subtitle}</div>}</div>
     <div className="ml-auto flex items-center gap-2">
       <div className="hidden md:flex items-center gap-2 bg-bg2 border border-line rounded-md px-3 py-1.5 w-[260px] text-fg3"><Icon name="search" size={14}/><input className="bg-transparent outline-none text-sm text-fg1 placeholder:text-fg3 w-full" placeholder="Search pair, trade ID…"/><span className="font-mono text-[10px] border border-line2 rounded px-1 py-0.5">⌘K</span></div>
       <button className="w-9 h-9 rounded-md border border-line bg-bg2 hover:bg-bg3 text-fg1 flex items-center justify-center relative"><Icon name="bell" size={15}/><span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-gold"></span></button>
-      <div className="flex items-center gap-2.5 bg-bg2 border border-line rounded-md pl-1 pr-3 py-1">
+      <div className="flex items-center gap-2.5 bg-bg2 border border-line rounded-md pl-1 pr-2 md:pr-3 py-1">
         <div className="w-7 h-7 rounded bg-gradient-to-br from-lime-300 to-lime-700 text-bg0 flex items-center justify-center font-display font-semibold text-sm">{user.initials}</div>
-        <div className="text-xs leading-tight"><div className="font-medium text-fg0">{user.name}</div><div className="text-fg3 font-mono text-[10px]">{user.tier}</div></div>
+        <div className="hidden sm:block text-xs leading-tight"><div className="font-medium text-fg0">{user.name}</div><div className="text-fg3 font-mono text-[10px]">{user.tier}</div></div>
       </div>
     </div>
   </div>
@@ -341,7 +352,7 @@ const DashboardPage=({eaStatus})=>{
   const eqData=useMemo(()=>{const f={'1W':7,'1M':30,'3M':90,'ALL':999}[range]||999,cut=Date.now()-f*86400000;return EQUITY.filter(p=>p.t>=cut).map(p=>({...p,label:new Date(p.t).toLocaleDateString('en-US',{month:'short',day:'2-digit'})}));},[range]);
   const eqChg=eqData.length>1?eqData[eqData.length-1].equity-eqData[0].equity:0,eqPct=eqData.length>1?(eqChg/eqData[0].equity)*100:0;
   return(
-    <div className="px-8 py-6 space-y-6">
+    <div className="px-4 md:px-8 py-5 md:py-6 space-y-5 md:space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Balance" value={fmtUsd(SUMMARY.balance)} delta={(SUMMARY.totalPnl/SUMMARY.startBalance)*100} deltaLabel={`${fmtUsd(SUMMARY.totalPnl,{sign:true})} all-time`} icon="wallet" accent/>
         <StatCard label="Today's P&L" value={fmtUsd(218.42,{sign:true})} delta={1.21} deltaLabel="vs yesterday" icon="flash"/>
@@ -384,7 +395,7 @@ const TradesPage=()=>{
   const filtered=useMemo(()=>TRADES.filter(t=>{if(side!=='all'&&t.side!==side)return false;if(pair!=='all'&&t.pair!==pair)return false;if(status!=='all'&&t.status!==status)return false;if(q&&!(`${t.pair} ${t.id}`).toLowerCase().includes(q.toLowerCase()))return false;return true}),[side,pair,status,q]);
   const pd=filtered.slice(page*PS,(page+1)*PS),totalPnl=filtered.filter(t=>t.status==='CLOSED').reduce((s,t)=>s+t.pnl,0),wins=filtered.filter(t=>t.status==='CLOSED'&&t.pnl>0).length,closed=filtered.filter(t=>t.status==='CLOSED').length;
   return(
-    <div className="px-8 py-6 space-y-5">
+    <div className="px-4 md:px-8 py-5 md:py-6 space-y-5">
       <Card padded={false} className="p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-bg2 border border-line rounded-md px-3 py-1.5 w-[260px]"><Icon name="search" size={14} className="text-fg3"/><input value={q} onChange={e=>{setQ(e.target.value);setPage(0)}} className="bg-transparent outline-none text-sm w-full placeholder:text-fg3" placeholder="Search pair or trade ID…"/></div>
@@ -447,7 +458,7 @@ const AnalyticsPage=()=>{
   const eqData=EQUITY.map(p=>({...p,label:new Date(p.t).toLocaleDateString('en-US',{month:'short',day:'2-digit'})}));
   const max=Math.max(...HOURLY.map(h=>h.v)),days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   return(
-    <div className="px-8 py-6 space-y-5">
+    <div className="px-4 md:px-8 py-5 md:py-6 space-y-5">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-0">
           <div className="p-5"><CardHeader title="Equity &amp; Drawdown" subtitle="120-day overview" accent/></div>
@@ -513,7 +524,7 @@ const SecuritySettings=()=><>
 
 const SettingsPage=({eaStatus,setEaStatus})=>{
   const [section,setSection]=useState('api');
-  return<div className="px-8 py-6"><div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6"><div className="flex lg:flex-col gap-1">{[{id:'api',label:'API Keys',icon:'key'},{id:'ea',label:'EA Configuration',icon:'cog'},{id:'notify',label:'Notifications',icon:'bell'},{id:'security',label:'Security',icon:'shield'}].map(s=><button key={s.id} onClick={()=>setSection(s.id)} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm transition-colors ${section===s.id?'bg-bg2 text-fg0 border border-line':'text-fg2 hover:text-fg0 border border-transparent'}`}><Icon name={s.icon} size={14}/>{s.label}</button>)}</div><div className="space-y-5">{section==='api'&&<ApiSettings/>}{section==='ea'&&<EaSettings eaStatus={eaStatus} setEaStatus={setEaStatus}/>}{section==='notify'&&<NotifySettings/>}{section==='security'&&<SecuritySettings/>}</div></div></div>;
+  return<div className="px-4 md:px-8 py-5 md:py-6"><div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6"><div className="flex lg:flex-col gap-1">{[{id:'api',label:'API Keys',icon:'key'},{id:'ea',label:'EA Configuration',icon:'cog'},{id:'notify',label:'Notifications',icon:'bell'},{id:'security',label:'Security',icon:'shield'}].map(s=><button key={s.id} onClick={()=>setSection(s.id)} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm transition-colors ${section===s.id?'bg-bg2 text-fg0 border border-line':'text-fg2 hover:text-fg0 border border-transparent'}`}><Icon name={s.icon} size={14}/>{s.label}</button>)}</div><div className="space-y-5">{section==='api'&&<ApiSettings/>}{section==='ea'&&<EaSettings eaStatus={eaStatus} setEaStatus={setEaStatus}/>}{section==='notify'&&<NotifySettings/>}{section==='security'&&<SecuritySettings/>}</div></div></div>;
 };
 
 const TITLES={dashboard:{title:'Dashboard',subtitle:'Real-time overview of your Expert Advisor'},trades:{title:'Trade History',subtitle:'Every position the EA has opened and closed'},analytics:{title:'Analytics',subtitle:'Performance breakdown across time, pairs, and risk'},settings:{title:'Settings',subtitle:'API keys, EA configuration, and account preferences'}};
@@ -526,10 +537,11 @@ const App=()=>{
   return(
     <div className="flex min-h-screen bg-bg0">
       <Sidebar route={route} setRoute={setRoute} eaStatus={eaStatus} onToggleEa={()=>setEaStatus(s=>s==='active'?'paused':'active')} onLogout={()=>setAuthed(false)}/>
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 pb-20 md:pb-0">
         <Topbar title={title} subtitle={subtitle} user={user}/>
         <div>{route==='dashboard'&&<DashboardPage eaStatus={eaStatus}/>}{route==='trades'&&<TradesPage/>}{route==='analytics'&&<AnalyticsPage/>}{route==='settings'&&<SettingsPage eaStatus={eaStatus} setEaStatus={setEaStatus}/>}</div>
       </main>
+      <MobileNav route={route} setRoute={setRoute}/>
     </div>
   );
 };
